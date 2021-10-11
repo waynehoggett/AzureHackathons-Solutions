@@ -1,0 +1,14 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "vmPassword": {
+	      "reference": {
+	        "keyVault": {
+	          "id": "/subscriptions/63afd83e-1bf0-4187-a021-dc57e6ee6a92/resourcegroups/wh-rg/providers/Microsoft.KeyVault/vaults/whkeyvaultn6knv"
+	        },
+	        "secretName": "AdminPassword"
+	      }
+    }
+    }
+}
