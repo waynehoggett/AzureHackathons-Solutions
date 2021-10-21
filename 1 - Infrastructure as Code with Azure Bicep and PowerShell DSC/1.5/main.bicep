@@ -26,7 +26,7 @@ resource vnet1 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   }
 }
 resource keyVault1 'Microsoft.KeyVault/vaults@2019-09-01' = {
-  name: 'whkeyvault${substring(uniqueString(resourceGroup().id), 0, 5)}'
+  name: 'whkeyvault${substring(uniqueString(resourceGroup().id), 0, 6)}'
   location: resourceGroup().location
   properties: {
     enabledForDeployment: true
