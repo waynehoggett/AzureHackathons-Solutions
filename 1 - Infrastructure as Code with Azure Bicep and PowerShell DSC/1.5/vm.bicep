@@ -9,6 +9,7 @@ param vmPublisher string = 'MicrosoftWindowsServer'
 param vmOffer string = 'WindowsServer'
 param vmSku string = '2016-Datacenter'
 param vmVersion string = 'latest'
+param vmZone string = '1'
 
 resource VMNIC 'Microsoft.Network/networkInterfaces@2020-11-01' = {
   name: '${vmName}-NIC1'
@@ -60,4 +61,7 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = {
       ]
     }
   }
+  zones: [
+    vmZone
+  ]
 }

@@ -1,4 +1,3 @@
-param vmSubnetId string
 param location string = resourceGroup().location
 param vmName string
 @secure()
@@ -9,8 +8,7 @@ param vmPublisher string = 'MicrosoftWindowsServer'
 param vmOffer string = 'WindowsServer'
 param vmSku string = '2016-Datacenter'
 param vmVersion string = 'latest'
-param vmZone string = '1'
-param vmapplicationGatewayBackendAddressPools string
+param automationAccountName string = 'whautomationaccount'
 
 resource VMNIC 'Microsoft.Network/networkInterfaces@2020-11-01' = {
   name: '${vmName}-NIC1'
@@ -22,13 +20,8 @@ resource VMNIC 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         properties: {
           privateIPAllocationMethod: 'Dynamic'
           subnet: {
-            id: vmSubnetId
+            id: virtualNetwork.properties.subnets[0].id
           }
-          applicationGatewayBackendAddressPools: [
-            {
-              id: vmapplicationGatewayBackendAddressPools
-            }
-          ]
         }
       }
     ]
@@ -67,29 +60,50 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = {
       ]
     }
   }
-  zones: [
-    vmZone
-  ]
 }
-
-resource windowsVMExtensions 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+resource VMName_Microsoft_Powershell_DSC 'Microsoft.Compute/virtualMachines/extensions@2018-06-01' = {
   parent: VM
-  name: '${vmName}-ScriptExtension'
+  name: 'Microsoft.Powershell.DSC'
   location: resourceGroup().location
   properties: {
-    publisher: 'Microsoft.Compute'
-    type: 'CustomScriptExtension'
-    typeHandlerVersion: '1.10'
+    publisher: 'Microsoft.Powershell'
+    type: 'DSC'
+    typeHandlerVersion: '2.77'
     autoUpgradeMinorVersion: true
-    settings: {
-      fileUris: [
-        'https://raw.githubusercontent.com/waynehoggett/AzureHackathons/main/1%20-%20Infrastructure%20as%20Code%20with%20Azure%20Bicep%20and%20PowerShell%20DSC/Challenges/2.1/Install-IIS.ps1'
-      ]
-    }
     protectedSettings: {
-      commandToExecute: 'powershell -ExecutionPolicy Bypass -file Install-IIS.ps1'
+      Items: {
+        registrationKeyPrivate: listKeys(resourceId('Microsoft.Automation/automationAccounts',automationAccountName), '2020-01-13-preview').Keys[0].value
+      }
+    }
+    settings: {
+      Properties: [
+        {
+          Name: 'RegistrationKey'
+          Value: {
+            UserName: 'PLACEHOLDER_DONOTUSE'
+            Password: 'PrivateSettingsRef:registrationKeyPrivate'
+          }
+          TypeName: 'System.Management.Automation.PSCredential'
+        }
+        {
+          Name: 'RegistrationUrl'
+          Value: reference(resourceId('Microsoft.Automation/automationAccounts', automationAccountName), '2020-01-13-preview').registrationUrl
+          TypeName: 'System.String'
+        }
+        {
+          Name: 'NodeConfigurationName'
+          Value: 'ServerConfiguration.${vmName}'
+          TypeName: 'System.String'
+        }
+      ]
     }
   }
 }
+resource keyVault1 'Microsoft.KeyVault/vaults@2019-09-01' existing = {
+  name: 'whkeyvaultn6knvi'
+}
 
+resource virtualNetwork 'Microsoft.Network/virtualNetworks@2019-11-01' existing = {
+  name: 'Vnet1'
+}
 output vmPrivateIP string = VMNIC.properties.ipConfigurations[0].properties.privateIPAddress

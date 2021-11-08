@@ -33,14 +33,14 @@ resource vnet1 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   }
 }
 resource keyVault1 'Microsoft.KeyVault/vaults@2019-09-01' = {
-  name: 'whkeyvault${substring(uniqueString(resourceGroup().id), 0, 6)}'
+  name: 'whkeyvault${substring(uniqueString(resourceGroup().id), 0, 7)}'
   location: resourceGroup().location
   properties: {
     enabledForDeployment: true
     enabledForTemplateDeployment: true
     enabledForDiskEncryption: true
     enableRbacAuthorization: true
-    tenantId: '8940c948-d605-4e9a-b426-91153d1275f9'
+    tenantId: '<tenant id>'
     sku: {
       name: 'standard'
       family: 'A'
@@ -55,7 +55,11 @@ module vmModule 'vm.bicep' = [ for virtualMachine in virtualMachines: {
     vmPassword: keyVault1.getSecret(virtualMachine.vmPassword)
     vmSubnetId: vnet1.properties.subnets[0].id
     vmapplicationGatewayBackendAddressPools: applicationGateway.properties.backendAddressPools[0].id
+    vmZone: virtualMachine.vmZones
   }
+  dependsOn: [
+    keyVault1
+  ]
 }]
 
 resource appGW1PIP 'Microsoft.Network/publicIPAddresses@2019-11-01' = {

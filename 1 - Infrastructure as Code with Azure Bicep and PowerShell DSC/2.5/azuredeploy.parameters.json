@@ -6,13 +6,11 @@
       "value": [
         {
           "vmName": "VM1",
-          "vmPassword": "AdminPassword",
-          "vmZone": "1"
+          "vmPassword": "AdminPassword"
         },
         {
           "vmName": "VM2",
-          "vmPassword": "AdminPassword",
-          "vmZone": "2"
+          "vmPassword": "AdminPassword"
         }
       ]
     }

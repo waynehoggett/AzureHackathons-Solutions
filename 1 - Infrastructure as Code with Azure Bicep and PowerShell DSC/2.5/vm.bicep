@@ -9,8 +9,8 @@ param vmPublisher string = 'MicrosoftWindowsServer'
 param vmOffer string = 'WindowsServer'
 param vmSku string = '2016-Datacenter'
 param vmVersion string = 'latest'
-param vmZone string = '1'
 param vmapplicationGatewayBackendAddressPools string
+param automationAccountName string
 
 resource VMNIC 'Microsoft.Network/networkInterfaces@2020-11-01' = {
   name: '${vmName}-NIC1'
@@ -67,9 +67,62 @@ resource VM 'Microsoft.Compute/virtualMachines@2020-12-01' = {
       ]
     }
   }
-  zones: [
-    vmZone
-  ]
+}
+resource VMName_Microsoft_Powershell_DSC 'Microsoft.Compute/virtualMachines/extensions@2018-06-01' = {
+  parent: VM
+  name: 'Microsoft.Powershell.DSC'
+  location: resourceGroup().location
+  properties: {
+    publisher: 'Microsoft.Powershell'
+    type: 'DSC'
+    typeHandlerVersion: '2.77'
+    autoUpgradeMinorVersion: true
+    protectedSettings: {
+      Items: {
+        registrationKeyPrivate: automationAccount.listKeys().Keys[0].value
+      }
+    }
+    settings: {
+      Properties: [
+        {
+          Name: 'RegistrationKey'
+          Value: {
+            UserName: 'PLACEHOLDER_DONOTUSE'
+            Password: 'PrivateSettingsRef:registrationKeyPrivate'
+          }
+          TypeName: 'System.Management.Automation.PSCredential'
+        }
+        {
+          Name: 'RegistrationUrl'
+          Value: reference(resourceId('Microsoft.Automation/automationAccounts', automationAccountName), '2020-01-13-preview').registrationUrl
+          TypeName: 'System.String'
+        }
+        {
+          Name: 'NodeConfigurationName'
+          Value: 'ServerConfiguration.${vmName}'
+          TypeName: 'System.String'
+        }
+        {
+          Name: 'RefreshFrequencyMins'
+          Value: '1440'
+          TypeName: 'System.uint32'
+        }
+        {
+          Name: 'RefreshFrequencyMins'
+          Value: '60'
+          TypeName: 'System.uint32'
+        }
+        {
+          Name: 'RebootNodeIfNeeded'
+          Value: 'true'
+          TypeName: 'boolean'
+        }
+      ]
+    }
+  }
+}
+resource automationAccount 'Microsoft.Automation/automationAccounts@2019-06-01' existing = {
+  name: automationAccountName
 }
 
 output vmPrivateIP string = VMNIC.properties.ipConfigurations[0].properties.privateIPAddress
